@@ -415,6 +415,13 @@ static int tux3_statfs(struct dentry *dentry, struct kstatfs *buf)
 	return 0;
 }
 
+static int tux3_remount(struct super_block *sb, int *flags, char *data)
+{
+	/* Flush all before read-only */
+	sync_filesystem(sb);
+	return 0;
+}
+
 static const struct super_operations tux3_super_ops = {
 	.alloc_inode	= tux3_alloc_inode,
 	.destroy_inode	= tux3_destroy_inode,
@@ -429,6 +436,7 @@ static const struct super_operations tux3_super_ops = {
 #endif
 	.put_super	= tux3_put_super,
 	.statfs		= tux3_statfs,
+	.remount_fs	= tux3_remount,
 };
 
 static int tux3_fill_super(struct super_block *sb, void *data, int silent)
