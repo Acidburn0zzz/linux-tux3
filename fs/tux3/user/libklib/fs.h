@@ -171,4 +171,12 @@ static inline void inode_dec_link_count(struct inode *inode)
 	mark_inode_dirty(inode);
 }
 
+static inline void inode_writeback_touch(struct inode *inode)
+{
+}
+
+static inline void inode_writeback_done(struct inode *inode)
+{
+}
+
 #endif /* !LIBKLIB_FS_H */
