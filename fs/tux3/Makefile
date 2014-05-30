@@ -13,7 +13,7 @@ tux3-objs += balloc.o btree.o buffer.o commit.o dir.o dleaf.o \
 EXTRA_CFLAGS += -Werror -std=gnu99 -Wno-declaration-after-statement
 #EXTRA_CFLAGS += -DTUX3_FLUSHER=TUX3_FLUSHER_SYNC
 #EXTRA_CFLAGS += -DTUX3_FLUSHER=TUX3_FLUSHER_ASYNC_OWN
-EXTRA_CFLAGS += -DTUX3_FLUSHER=TUX3_FLUSHER_ASYNC_HACK
+EXTRA_CFLAGS += -DTUX3_FLUSHER=TUX3_FLUSHER_ASYNC
 
 obj-$(CONFIG_TUX3_MMAP) += mmap_builtin_hack.o
 endif

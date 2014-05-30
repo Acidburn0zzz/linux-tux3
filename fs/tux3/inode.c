@@ -986,8 +986,6 @@ static void tux_setup_inode(struct inode *inode)
 
 	assert(tux_inode(inode)->inum != TUX_INVALID_INO);
 
-	tux3_set_mapping_bdi(inode);
-
 //	inode->i_generation = 0;
 //	inode->i_flags = 0;
 

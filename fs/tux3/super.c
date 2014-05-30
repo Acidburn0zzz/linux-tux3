@@ -126,9 +126,6 @@ static void __tux3_put_super(struct sb *sbi)
 	iput(sbi->volmap);
 	sbi->volmap = NULL;
 
-	/* Cleanup flusher after inode was evicted */
-	tux3_exit_flusher(sbi);
-
 	tux3_free_idefer_map(sbi->idefer_map);
 	sbi->idefer_map = NULL;
 	/* FIXME: add more sanity check */
@@ -177,13 +174,6 @@ struct replay *tux3_init_fs(struct sb *sbi)
 	struct inode *inode;
 	char *name;
 	int err;
-
-	/* Initialize flusher before setup inode */
-	err = tux3_init_flusher(sbi);
-	if (err) {
-		tux3_err(sbi, "failed to initialize flusher");
-		goto error;
-	}
 
 	err = -ENOMEM;
 
@@ -375,7 +365,7 @@ static void tux3_destroy_inode(struct inode *inode)
 	call_rcu(&inode->i_rcu, tux3_i_callback);
 }
 
-#if TUX3_FLUSHER != TUX3_FLUSHER_ASYNC_HACK
+#if TUX3_FLUSHER != TUX3_FLUSHER_ASYNC
 static int tux3_sync_fs(struct super_block *sb, int wait)
 {
 	/* FIXME: We should support "wait" parameter. */
@@ -430,8 +420,9 @@ static const struct super_operations tux3_super_ops = {
 	.evict_inode	= tux3_evict_inode,
 	/* FIXME: we have to handle write_inode of sync (e.g. cache pressure) */
 //	.write_inode	= tux3_write_inode,
-#if TUX3_FLUSHER != TUX3_FLUSHER_ASYNC_HACK
-	/* If TUX3_FLUSHER_ASYNC_HACK, normal kernel flush request does all */
+	.writeback	= tux3_writeback,
+#if TUX3_FLUSHER != TUX3_FLUSHER_ASYNC
+	/* If TUX3_FLUSHER_ASYNC, normal kernel flush request does all */
 	.sync_fs	= tux3_sync_fs,
 #endif
 	.put_super	= tux3_put_super,

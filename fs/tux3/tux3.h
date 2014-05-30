@@ -222,7 +222,7 @@ struct stash { struct flink_head head; u64 *pos, *top; };
 /* Flush asynchronously by own timing */
 #define TUX3_FLUSHER_ASYNC_OWN		2
 /* Flush asynchronously by kernel normal timing (by hackish way) */
-#define TUX3_FLUSHER_ASYNC_HACK		3
+#define TUX3_FLUSHER_ASYNC		3
 
 /* Refcount for delta */
 struct delta_ref {
@@ -270,9 +270,6 @@ struct sb {
 	wait_queue_head_t delta_event_wq;	/* wait queue for delta event */
 #if TUX3_FLUSHER == TUX3_FLUSHER_ASYNC_OWN
 	struct task_struct *flush_task;		/* work to flush delta */
-#endif
-#if TUX3_FLUSHER == TUX3_FLUSHER_ASYNC_HACK
-	struct backing_dev_info bdi;
 #endif
 
 	struct btree itree;	/* Inode btree */
@@ -794,9 +791,6 @@ int change_end(struct sb *sb);
 void change_begin_if_needed(struct sb *sb, int need_sep);
 void change_end_if_needed(struct sb *sb);
 
-/* commit_flusher.c */
-#include "commit_flusher.h"
-
 /* dir.c */
 void tux_set_entry(struct buffer_head *buffer, struct tux3_dirent *entry,
 		   inum_t inum, umode_t mode);
@@ -979,6 +973,9 @@ static inline void tux3_mark_inode_dirty_sync(struct inode *inode)
 	__tux3_mark_inode_dirty(inode, I_DIRTY_SYNC);
 }
 
+struct super_block;
+struct writeback_control;
+long tux3_writeback(struct super_block *super, struct writeback_control *wbc, long *nr_pages);
 void tux3_dirty_inode(struct inode *inode, int flags);
 void tux3_mark_inode_to_delete(struct inode *inode);
 void tux3_iattrdirty(struct inode *inode);
