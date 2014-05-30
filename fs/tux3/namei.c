@@ -357,6 +357,7 @@ const struct inode_operations tux_dir_iops = {
 	.rmdir		= tux3_rmdir,
 	.mknod		= tux3_mknod,
 	.rename		= tux3_rename,
+//	.rename2	= tux3_rename2,
 	.setattr	= tux3_setattr,
 	.getattr	= tux3_getattr,
 //	.setxattr	= generic_setxattr,
