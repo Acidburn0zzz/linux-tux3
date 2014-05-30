@@ -18,12 +18,12 @@ static inline long __must_check PTR_ERR(const void *ptr)
 	return (long)ptr;
 }
 
-static inline long __must_check IS_ERR(const void *ptr)
+static inline bool __must_check IS_ERR(const void *ptr)
 {
 	return IS_ERR_VALUE((unsigned long)ptr);
 }
 
-static inline long __must_check IS_ERR_OR_NULL(const void *ptr)
+static inline bool __must_check IS_ERR_OR_NULL(const void *ptr)
 {
 	return !ptr || IS_ERR_VALUE((unsigned long)ptr);
 }
