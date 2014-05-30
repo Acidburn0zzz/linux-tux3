@@ -644,6 +644,8 @@ static int tux3_truncate_inode_page(struct address_space *mapping,
  * without invalidate. This way is inefficient, and we would want to merge
  * tux3_truncate_inode_pages_page() and truncate_inode_pages_range().
  */
+void clear_exceptional_entry(struct address_space *mapping,
+			     pgoff_t index, void *entry);
 static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 					    loff_t lstart, loff_t lend)
 {
@@ -652,13 +654,14 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 	unsigned int	partial_start;	/* inclusive */
 	unsigned int	partial_end;	/* exclusive */
 	struct pagevec	pvec;
+	pgoff_t		indices[PAGEVEC_SIZE];
 	pgoff_t		index;
 	int		i;
 
 #if 0 /* FIXME */
 	cleancache_invalidate_inode(mapping);
 #endif
-	if (mapping->nrpages == 0)
+	if (mapping->nrpages == 0 && mapping->nrshadows == 0)
 		return;
 
 	/* FIXME: should use MAX_LFS_FILESIZE, instead of -1 */
@@ -682,8 +685,9 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 
 	pagevec_init(&pvec, 0);
 	index = start;
-	while (index < end && pagevec_lookup(&pvec, mapping, index,
-			min(end - index, (pgoff_t)PAGEVEC_SIZE))) {
+	while (index < end && pagevec_lookup_entries(&pvec, mapping, index,
+			min(end - index, (pgoff_t)PAGEVEC_SIZE),
+			indices)) {
 #if 0 /* FIXME */
 		mem_cgroup_uncharge_start();
 #endif
@@ -691,9 +695,14 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 			struct page *page = pvec.pages[i];
 
 			/* We rely upon deletion not changing page->index */
-			index = page->index;
+			index = indices[i];
 			if (index >= end)
 				break;
+
+			if (radix_tree_exceptional_entry(page)) {
+				clear_exceptional_entry(mapping, index, page);
+				continue;
+			}
 
 			if (!trylock_page(page))
 				continue;
@@ -707,6 +716,7 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 			tux3_truncate_inode_page(mapping, page);
 			unlock_page(page);
 		}
+		pagevec_remove_exceptionals(&pvec);
 		pagevec_release(&pvec);
 #if 0 /* FIXME */
 		mem_cgroup_uncharge_end();
@@ -751,8 +761,9 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 	index = start;
 	for ( ; ; ) {
 		cond_resched();
-		if (!pagevec_lookup(&pvec, mapping, index,
-			min(end - index, (pgoff_t)PAGEVEC_SIZE))) {
+		if (!pagevec_lookup_entries(&pvec, mapping, index,
+			min(end - index, (pgoff_t)PAGEVEC_SIZE),
+			indices)) {
 #if 0
 			if (index == start)
 				break;
@@ -766,7 +777,8 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 			break;
 #endif
 		}
-		if (index == start && pvec.pages[0]->index >= end) {
+		if (index == start && indices[0] >= end) {
+			pagevec_remove_exceptionals(&pvec);
 			pagevec_release(&pvec);
 			break;
 		}
@@ -777,9 +789,14 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 			struct page *page = pvec.pages[i];
 
 			/* We rely upon deletion not changing page->index */
-			index = page->index;
+			index = indices[i];
 			if (index >= end)
 				break;
+
+			if (radix_tree_exceptional_entry(page)) {
+				clear_exceptional_entry(mapping, index, page);
+				continue;
+			}
 
 			lock_page(page);
 			WARN_ON(page->index != index);
@@ -789,6 +806,7 @@ static void tux3_truncate_inode_pages_range(struct address_space *mapping,
 			tux3_truncate_inode_page(mapping, page);
 			unlock_page(page);
 		}
+		pagevec_remove_exceptionals(&pvec);
 		pagevec_release(&pvec);
 #if 0 /* FIXME */
 		mem_cgroup_uncharge_end();
