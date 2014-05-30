@@ -192,6 +192,35 @@ void inode_wb_list_del(struct inode *inode)
 }
 
 /*
+ * Remove inode from writeback list if clean.
+ */
+void inode_writeback_done(struct inode *inode)
+{
+	struct backing_dev_info *bdi = inode_to_bdi(inode);
+
+	spin_lock(&bdi->wb.list_lock);
+	spin_lock(&inode->i_lock);
+	if (!(inode->i_state & I_DIRTY))
+		list_del_init(&inode->i_wb_list);
+	spin_unlock(&inode->i_lock);
+	spin_unlock(&bdi->wb.list_lock);
+}
+EXPORT_SYMBOL_GPL(inode_writeback_done);
+
+/*
+ * Add inode to writeback dirty list with current time.
+ */
+void inode_writeback_touch(struct inode *inode)
+{
+	struct backing_dev_info *bdi = inode->i_sb->s_bdi;
+	spin_lock(&bdi->wb.list_lock);
+	inode->dirtied_when = jiffies;
+	list_move(&inode->i_wb_list, &bdi->wb.b_dirty);
+	spin_unlock(&bdi->wb.list_lock);
+}
+EXPORT_SYMBOL_GPL(inode_writeback_touch);
+
+/*
  * Redirty an inode: set its when-it-was dirtied timestamp and move it to the
  * furthest end of its superblock's dirty-inode list.
  *
@@ -593,9 +622,9 @@ static long writeback_chunk_size(struct backing_dev_info *bdi,
  *
  * Return the number of pages and/or inodes written.
  */
-static long writeback_sb_inodes(struct super_block *sb,
-				struct bdi_writeback *wb,
-				struct wb_writeback_work *work)
+static long __writeback_sb_inodes(struct super_block *sb,
+				  struct bdi_writeback *wb,
+				  struct wb_writeback_work *work)
 {
 	struct writeback_control wbc = {
 		.sync_mode		= work->sync_mode,
@@ -708,6 +737,30 @@ static long writeback_sb_inodes(struct super_block *sb,
 		}
 	}
 	return wrote;
+}
+
+static long writeback_sb_inodes(struct super_block *sb,
+				struct bdi_writeback *wb,
+				struct wb_writeback_work *work)
+{
+	if (sb->s_op->writeback) {
+		struct writeback_control wbc = {
+			.sync_mode		= work->sync_mode,
+			.tagged_writepages	= work->tagged_writepages,
+			.for_kupdate		= work->for_kupdate,
+			.for_background		= work->for_background,
+			.for_sync		= work->for_sync,
+			.range_cyclic		= work->range_cyclic,
+		};
+		long ret;
+
+		spin_unlock(&wb->list_lock);
+		ret = sb->s_op->writeback(sb, &wbc, &work->nr_pages);
+		spin_lock(&wb->list_lock);
+		return ret;
+	}
+
+	return __writeback_sb_inodes(sb, wb, work);
 }
 
 static long __writeback_inodes_wb(struct bdi_writeback *wb,
