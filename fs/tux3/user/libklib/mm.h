@@ -63,6 +63,11 @@ static inline void truncate_inode_pages(map_t *map, loff_t lstart)
 	truncate_buffers_range(map, lstart, LLONG_MAX);
 }
 
+static inline void truncate_inode_pages_final(map_t *map)
+{
+	truncate_inode_pages(map, 0);
+}
+
 void truncate_pagecache(struct inode *inode, loff_t newsize);
 void truncate_setsize(struct inode *inode, loff_t newsize);
 
