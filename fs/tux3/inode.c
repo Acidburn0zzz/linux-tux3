@@ -730,9 +730,9 @@ void tux3_evict_inode(struct inode *inode)
 	change_begin_atomic_nested(sb, &ptr);
 #ifdef __KERNEL__
 	/* Block device special file is still overwriting i_mapping */
-	truncate_inode_pages(&inode->i_data, 0);
+	truncate_inode_pages_final(&inode->i_data);
 #else
-	truncate_inode_pages(mapping(inode), 0);
+	truncate_inode_pages_final(mapping(inode));
 #endif
 	change_end_atomic_nested(sb, ptr);
 
