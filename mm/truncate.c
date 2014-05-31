@@ -22,8 +22,8 @@
 #include <linux/cleancache.h>
 #include "internal.h"
 
-static void clear_exceptional_entry(struct address_space *mapping,
-				    pgoff_t index, void *entry)
+void clear_exceptional_entry(struct address_space *mapping,
+			     pgoff_t index, void *entry)
 {
 	struct radix_tree_node *node;
 	void **slot;
@@ -61,6 +61,8 @@ static void clear_exceptional_entry(struct address_space *mapping,
 unlock:
 	spin_unlock_irq(&mapping->tree_lock);
 }
+// temporary hack
+EXPORT_SYMBOL_GPL(clear_exceptional_entry);
 
 /**
  * do_invalidatepage - invalidate part or all of a page

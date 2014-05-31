@@ -978,6 +978,7 @@ unsigned pagevec_lookup_entries(struct pagevec *pvec,
 				    pvec->pages, indices);
 	return pagevec_count(pvec);
 }
+EXPORT_SYMBOL_GPL(pagevec_lookup_entries);
 
 /**
  * pagevec_remove_exceptionals - pagevec exceptionals pruning
@@ -999,6 +1000,7 @@ void pagevec_remove_exceptionals(struct pagevec *pvec)
 	}
 	pvec->nr = j;
 }
+EXPORT_SYMBOL_GPL(pagevec_remove_exceptionals);
 
 /**
  * pagevec_lookup - gang pagecache lookup

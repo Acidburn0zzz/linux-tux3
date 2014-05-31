@@ -638,7 +638,6 @@ static void delta_transition(struct sb *sb)
 	 ((int)(a) - (int)(b) >= 0))
 
 #include "commit_flusher.c"
-#include "commit_flusher_hack.c"
 
 int force_unify(struct sb *sb)
 {

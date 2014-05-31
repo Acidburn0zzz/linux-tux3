@@ -357,8 +357,9 @@ const struct inode_operations tux_dir_iops = {
 	.rmdir		= tux3_rmdir,
 	.mknod		= tux3_mknod,
 	.rename		= tux3_rename,
+//	.rename2	= tux3_rename2,
 	.setattr	= tux3_setattr,
-	.getattr	= tux3_getattr
+	.getattr	= tux3_getattr,
 //	.setxattr	= generic_setxattr,
 //	.getxattr	= generic_getxattr,
 //	.listxattr	= ext3_listxattr,
@@ -368,5 +369,6 @@ const struct inode_operations tux_dir_iops = {
 	/* FIXME: why doesn't ext4 support this for directory? */
 //	.fallocate	= ext4_fallocate,
 //	.fiemap		= ext4_fiemap,
+	.update_time	= tux3_no_update_time,
 };
 #endif /* !__KERNEL__ */
